@@ -1,0 +1,164 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r echo=FALSE, results = FALSE, include=FALSE}
+if(!require(MatchIt)) install.packages("MatchIt", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-project.org")
+if(!require(sandwich)) install.packages("sandwich", repos = "http://cran.us.r-project.org")
+
+library(MatchIt)
+library(dplyr)
+library(ggplot2)
+library(lmtest) 
+library(sandwich) 
+```
+
+```{r Difference in Means Pre-Analysis, echo=FALSE}
+# Reading in the datasets as R Dataframes
+highDim_data = read.csv('./data/highDim_dataset.csv')
+lowDim_data = read.csv('./data/lowDim_dataset.csv')
+
+highDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(highDim_data, t.test(Y ~ A))
+
+lowDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(lowDim_data, t.test(Y ~ A))
+```
+```{r Propensity Score Estimation, echo=FALSE}
+# High dimension dataset
+ps_hd_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=highDim_data)
+
+ps_hd_df <- data.frame(prop_score = predict(ps_hd_est, type = "response"),
+                       treatment = ps_hd_est$model$A)
+ps_hd_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_hd_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+
+# Low dimension dataset
+ps_ld_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=lowDim_data)
+
+ps_ld_df <- data.frame(prop_score = predict(ps_ld_est, type = "response"),
+                       treatment = ps_ld_est$model$A)
+ps_ld_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_ld_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+```
+# Pairing 1
+### Algorithm: Propensity Matching
+### Distance Measure: Mahalanobis
+### Propensity Score Estimation: NA
+```{r Pairing 1 Implementing Matching Algo, echo=FALSE}
+# Algorithm: Propensity Matching
+# Distance Measure: Mahalanobis
+# Propensity Score Estimation: NA
+# Matching performed on low dimension dataset
+system.time({
+  if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_1 <- matchit(A ~ .-Y,
+                      data=lowDim_data,
+                      method="nearest",
+                      distance="mahalanobis")
+  }  
+})
+```
+From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
+"Although matching on the propensity score is often effective at eliminating differences between the treatment groups to achieve covariate balance, its performance in this regard must be assessed. If covariates remain imbalanced after matching, the matching is considered unsuccessful, and a different matching specification should be tried. MatchIt offers a few tools for the assessment of covariate balance after matching. These include graphical and statistical methods. More detail on the interpretation of the included plots and statistics can be found in vignette("assessing-balance").
+In addition to covariate balance, the quality of the match is determined by how many units remain after matching. Matching often involves discarding units that are not paired with other units, and some matching options, such as setting restrictions for common support or calipers, can further decrease the number of remaining units. If, after matching, the remaining sample size is small, the resulting effect estimate may be imprecise. In many cases, there will be a trade-off between balance and remaining sample size. How to optimally choose among them is an instance of the fundamental bias-variance trade-off problem that cannot be resolved without substantive knowledge of the phenomena under study. Prospective power analyses can be used to determine how small a sample can be before necessary precision is sacrificed."
+```{r Assessing Quality of Pairing 1 Matches, echo=FALSE}
+pair_1
+summary(pair_1, un = FALSE)
+# Unable to plot for Mahalanobis as there is no propensity score calculcated for this distance measure
+# plot(pair_1, type = "jitter", interactive = FALSE)
+```
+```{r Preparing Data Frame based on Pairing 1 Matches, echo=FALSE}
+mpair_1 = match.data(pair_1)
+head(mpair_1)
+```
+```{r Estimating Treatment Effects using Pairing 1 Matches, echo=FALSE}
+mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
+                 data = mpair_1,
+                 weights = weights)
+
+coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
+```
+
+# Pairing 2
+### Algorithm: Propensity Matching
+### Distance Measure: Propensity Score
+### Propensity Score Estimation: Logistic Regression
+```{r Pairing 2 Implementing Matching Algo, echo=FALSE}
+# Algorithm: Propensity Matching
+# Distance Measure: Propensity Score
+# Propensity Score Estimation: Logistic Regression
+system.time({
+  if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_2 <- matchit(A ~ .-Y,
+                      data=lowDim_data,
+                      method="nearest",
+                      distance="glm",
+                      link="logit")
+  }  
+})
+```
+```{r Assessing Quality of Pairing 2 Matches, echo=FALSE}
+pair_2
+summary(pair_2, un = FALSE)
+plot(pair_2, type = "jitter", interactive = FALSE)
+```
+```{r Preparing Data Frame based on Pairing 2 Matches, echo=FALSE}
+mpair_2 = match.data(pair_2)
+head(mpair_2)
+```
+```{r Estimating Treatment Effects using Pairing 2 Matches, echo=FALSE}
+mpair2_fit <- lm(Y ~ . -Y -weights -subclass,
+                 data = mpair_2,
+                 weights = weights)
+
+coeftest(mpair2_fit, vcov. = vcovCL, cluster = ~subclass)
+```
