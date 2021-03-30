@@ -1,0 +1,160 @@
+---
+title: "Untitled"
+author: "N/A"
+date: "3/29/2021"
+output: html_document
+---
+
+```{r echo=FALSE, results = FALSE, include=FALSE}
+if(!require(MatchIt)) install.packages("MatchIt", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-project.org")
+if(!require(sandwich)) install.packages("sandwich", repos = "http://cran.us.r-project.org")
+
+library(MatchIt)
+library(dplyr)
+library(ggplot2)
+library(lmtest) 
+library(sandwich) 
+```
+
+
+## R Markdown
+
+```{r Difference in Means Pre-Analysis, echo=FALSE}
+# Reading in the datasets as R Dataframes
+highDim_data = read.csv('./data/highDim_dataset.csv')
+lowDim_data = read.csv('./data/lowDim_dataset.csv')
+
+highDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(highDim_data, t.test(Y ~ A))
+
+lowDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(lowDim_data, t.test(Y ~ A))
+```
+
+
+```{r Propensity Score Estimation, echo=FALSE}
+# High dimension dataset
+ps_hd_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=highDim_data)
+
+ps_hd_df <- data.frame(prop_score = predict(ps_hd_est, type = "response"),
+                       treatment = ps_hd_est$model$A,
+                       Y = ps_hd_est$model$Y)
+ps_hd_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_hd_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+
+# Low dimension dataset
+ps_ld_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=lowDim_data)
+
+ps_ld_df <- data.frame(prop_score = predict(ps_ld_est, type = "response"),
+                       treatment = ps_ld_est$model$A,
+                       Y = ps_ld_est$model$Y)
+ps_ld_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_ld_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+```
+
+
+
+### Stratify the Data by Propensity score
+```{r Stratification }
+n_strat <- 7
+
+
+
+hd_strat_divider <- n_strat/nrow(ps_hd_df)
+strat_hd_df <- ps_hd_df %>% arrange(prop_score) %>%
+  mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1)
+
+
+
+
+
+ld_strat_divider <- n_strat/nrow(ps_ld_df)
+strat_ld_df <- ps_ld_df %>% arrange(prop_score) %>%
+  mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1)
+
+```
+
+## Find differences of Means between each stratum and weights for each stratum
+
+```{r}
+diff_mean_hd <- strat_hd_df %>%
+  group_by(treatment, stratum) %>%
+  summarise(mean_treat = mean(Y), .groups = "keep") %>%
+  mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
+  ungroup(treatment) %>%
+  mutate(diff_mean = sum(mean_treat)) %>%
+  filter(treatment == 0) %>%
+  select(stratum, diff_mean)
+
+
+diff_weight_hd <- strat_hd_df %>%
+  group_by(stratum) %>%
+  tally() %>%
+  mutate(weight = n/nrow(strat_hd_df)) %>%
+  left_join(diff_mean_hd, by = "stratum") %>%
+  select(weight, diff_mean)
+
+
+
+#Low Dimensional Data
+diff_mean_ld <- strat_ld_df %>%
+  group_by(treatment, stratum) %>%
+  summarise(mean_treat = mean(Y), .groups = "keep") %>%
+  mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
+  ungroup(treatment) %>%
+  mutate(diff_mean = sum(mean_treat)) %>%
+  filter(treatment == 0) %>%
+  select(stratum, diff_mean)
+
+
+diff_weight_ld <- strat_ld_df %>%
+  group_by(stratum) %>%
+  tally() %>%
+  mutate(weight = n/nrow(strat_ld_df)) %>%
+  left_join(diff_mean_ld, by = "stratum") %>%
+  select(weight, diff_mean)
+
+```
+
+```{r}
+ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
+ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
+```
+
