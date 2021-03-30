@@ -45,6 +45,8 @@ with(lowDim_data, t.test(Y ~ A))
 ```
 
 
+
+### Use Logistic regression to get the propensity score
 ```{r Propensity Score Estimation, echo=FALSE}
 # High dimension dataset
 ps_hd_est <- glm(A ~ . -Y,
@@ -112,49 +114,64 @@ strat_ld_df <- ps_ld_df %>% arrange(prop_score) %>%
 ```
 
 ## Find differences of Means between each stratum and weights for each stratum
-
 ```{r}
-diff_mean_hd <- strat_hd_df %>%
-  group_by(treatment, stratum) %>%
-  summarise(mean_treat = mean(Y), .groups = "keep") %>%
-  mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
-  ungroup(treatment) %>%
-  mutate(diff_mean = sum(mean_treat)) %>%
-  filter(treatment == 0) %>%
-  select(stratum, diff_mean)
+
+#High Dimensional Data
 
 
-diff_weight_hd <- strat_hd_df %>%
-  group_by(stratum) %>%
-  tally() %>%
-  mutate(weight = n/nrow(strat_hd_df)) %>%
-  left_join(diff_mean_hd, by = "stratum") %>%
-  select(weight, diff_mean)
+hd_prep <- system.time(
+  #Differences in means
+  diff_mean_hd <- strat_hd_df %>%
+    group_by(treatment, stratum) %>%
+    summarise(mean_treat = mean(Y), .groups = "keep") %>%
+    mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
+    ungroup(treatment) %>%
+    mutate(diff_mean = sum(mean_treat)) %>%
+    filter(treatment == 0) %>%
+    select(stratum, diff_mean),
+
+  #Weights for each stratum
+  diff_weight_hd <- strat_hd_df %>%
+    group_by(stratum) %>%
+    tally() %>%
+    mutate(weight = n/nrow(strat_hd_df)) %>%
+    left_join(diff_mean_hd, by = "stratum") %>%
+    select(weight, diff_mean)
+)
 
 
 
 #Low Dimensional Data
-diff_mean_ld <- strat_ld_df %>%
-  group_by(treatment, stratum) %>%
-  summarise(mean_treat = mean(Y), .groups = "keep") %>%
-  mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
-  ungroup(treatment) %>%
-  mutate(diff_mean = sum(mean_treat)) %>%
-  filter(treatment == 0) %>%
-  select(stratum, diff_mean)
 
+ld_prep <- system.time(
+  #Differences in means
+  diff_mean_ld <- strat_ld_df %>%
+    group_by(treatment, stratum) %>%
+    summarise(mean_treat = mean(Y), .groups = "keep") %>%
+    mutate(mean_treat= if_else(treatment == 0, -mean_treat, mean_treat)) %>%
+    ungroup(treatment) %>%
+    mutate(diff_mean = sum(mean_treat)) %>%
+    filter(treatment == 0) %>%
+    select(stratum, diff_mean),
 
-diff_weight_ld <- strat_ld_df %>%
-  group_by(stratum) %>%
-  tally() %>%
-  mutate(weight = n/nrow(strat_ld_df)) %>%
-  left_join(diff_mean_ld, by = "stratum") %>%
-  select(weight, diff_mean)
+  #Weights for each stratum
+  diff_weight_ld <- strat_ld_df %>%
+    group_by(stratum) %>%
+    tally() %>%
+    mutate(weight = n/nrow(strat_ld_df)) %>%
+    left_join(diff_mean_ld, by = "stratum") %>%
+    select(weight, diff_mean)
+) 
+
 
 ```
 
+
+### Calculate the ATE from summing the products of the mean and weight
 ```{r}
 ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
+
+
 ```
 
