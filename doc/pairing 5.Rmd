@@ -196,8 +196,8 @@ linear.Propensity.Score.ate <- function(data){
 
 cat("ATE for low dimension is:", linear.Propensity.Score.ate(lowDim_data)$ATE, ".\n")
 cat("ATE for high dimension is:", linear.Propensity.Score.ate(highDim_data)$ATE, ".\n")
-cat("Processing time of Linear Propensity Score estimation by Logistic Regression for low dimensional data is" ,linear.Propensity.Score.ate(lowDim_data)$running_time, "seconds", ".\n")
-cat("Processing time of Linear Propensity Score estimation by Logistic Regression for high dimensional data is" ,linear.Propensity.Score.ate(highDim_data)$running_time, "seconds", ".\n")
+cat("Processing time for low dimensional data is" ,linear.Propensity.Score.ate(lowDim_data)$running_time, "seconds", ".\n")
+cat("Processing time for high dimensional data is" ,linear.Propensity.Score.ate(highDim_data)$running_time, "seconds", ".\n")
 
 
 true_low_ATE<-2.0901
