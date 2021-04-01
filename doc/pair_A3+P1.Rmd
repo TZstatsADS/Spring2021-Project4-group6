@@ -35,7 +35,6 @@ where $\hat{e_i}$ is the estimated propensity score for individual $i$, $\hat{m_
 
 ```{r doubly robust estimation}
 DoublyRobustEst <- function(data) {
-  start_time <- Sys.time()
   
   X = data %>% select(-Y, -A)
   n <- dim(data)[1]
@@ -45,6 +44,7 @@ DoublyRobustEst <- function(data) {
   propensity <- predict(logit_model, X, type="response")
   data$ps <- propensity
   
+  start_time <- Sys.time()
   #split treatment and control group, and do regression for each group
   control <- data[data$A == 0, -2]
   treatment <- data[data$A == 1, -2]
@@ -73,8 +73,11 @@ DoublyRobustEst <- function(data) {
 
 ```{r lowDim data}
 DRE.low <- DoublyRobustEst(lowDim_data)
+true.ATE.low <- 2.0901
+diff.low <- true.ATE.low-DRE.low[,1]
 
 cat("ATE using Doubly Robust Estimation for lowDim data = ", DRE.low[,1], "\n")
+cat("The difference between the calculated ATE and the true ATE = ", diff.low, "\n")
 cat("Time for getting the propensity score and the ATE = ", DRE.low[,2], "s \n")
 ```
 
@@ -83,8 +86,11 @@ cat("Time for getting the propensity score and the ATE = ", DRE.low[,2], "s \n")
 
 ```{r highDim data}
 DRE.high <- DoublyRobustEst(highDim_data)
+true.ATE.high <- -54.8558 
+diff.high <- true.ATE.high-DRE.high[,1]
 
 cat("ATE using Doubly Robust Estimation for highDim data = ", DRE.high[,1], "\n")
+cat("The difference between the calculated ATE and the true ATE = ", diff.high, "\n")
 cat("Time for getting the propensity score and the ATE = ", DRE.high[,2], "s \n")
 ``` 
 

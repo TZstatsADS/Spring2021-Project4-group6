@@ -1,0 +1,239 @@
+---
+title: "pairing 5"
+author: "Yuqi Xing"
+date: "3/29/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+ 
+
+```{r results = FALSE, include=FALSE}
+if(!require(MatchIt)) install.packages("MatchIt", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-project.org")
+if(!require(sandwich)) install.packages("sandwich", repos = "http://cran.us.r-project.org")
+
+library(MatchIt)
+library(dplyr)
+library(ggplot2)
+library(lmtest) 
+library(sandwich) 
+```
+
+```{r Difference in Means Pre-Analysis}
+# Reading in the datasets as R Dataframes
+getwd()
+setwd('~/Desktop/Spring2021-Project4-group-6-1/data')
+highDim_data = read.csv('highDim_dataset.csv')
+lowDim_data = read.csv('lowDim_dataset.csv')
+
+highDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(highDim_data, t.test(Y ~ A))
+
+lowDim_data %>% 
+  group_by(A) %>% 
+  summarise(n=n(),
+            mean_outcome=mean(Y),
+            std_error = sd(Y) / sqrt(n))
+
+with(lowDim_data, t.test(Y ~ A))
+```
+
+```{r Propensity Score Estimation}
+# High dimension dataset
+ps_hd_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=highDim_data)
+
+ps_hd_df <- data.frame(prop_score = predict(ps_hd_est, type = "response"),
+                       treatment = ps_hd_est$model$A)
+ps_hd_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_hd_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+
+# Low dimension dataset
+ps_ld_est <- glm(A ~ . -Y,
+                 family=binomial(), 
+                 data=lowDim_data)
+
+ps_ld_df <- data.frame(prop_score = predict(ps_ld_est, type = "response"),
+                       treatment = ps_ld_est$model$A)
+ps_ld_df %>%
+  group_by(treatment) %>% 
+  summarise(mean_prop_score=mean(prop_score))
+  
+labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
+ps_ld_df %>%
+  mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
+  ggplot(aes(x = prop_score)) +
+  geom_histogram(color = "white") +
+  facet_wrap(~treatment) +
+  xlab("Probability of being exposed") +
+  theme_bw()
+```
+
+
+# Pairing 5
+Algorithm: Propensity Matching
+
+Distance Measure: Linear Propensity Score
+
+Propensity Score Estimation: Logistic Regression
+```{r Pairing 3 Implementing Matching Algo}
+# Algorithm: Propensity Matching
+# Distance Measure: Linear Propensity Score
+# Propensity Score Estimation: Logistic Regression
+system.time({
+  if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_5_low <- matchit(A ~ .-Y,
+                      data=lowDim_data,
+                      method="nearest",
+                      distance="glm",
+                      link = "linear.logit")
+  }  
+})
+
+
+
+system.time({
+  if (length(na.omit(highDim_data)) != length(highDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_5_high <- matchit(A ~ .-Y,
+                      data=highDim_data,
+                      method="nearest",
+                      distance="glm",
+                      link = "linear.logit")
+  }  
+})
+```
+
+```{r Assessing Quality of Pairing 3 Matches}
+pair_5_low
+summary(pair_5_low, un = FALSE)
+plot(pair_5_low, type = "jitter", interactive = FALSE)
+plot(pair_5_low, type = 'hist')
+
+#plot(pair_5_low)
+
+
+#pair_5_high
+#summary(pair_5_high, un = FALSE)
+plot(pair_5_high, type = "jitter", interactive = FALSE)
+plot(pair_5_high, type = 'hist')
+#plot(pair_5_high)
+```
+
+
+```{r Preparing Data Frame based on Pairing 3 Matches}
+mpair_5_low = match.data(pair_5_low)
+head(mpair_5_low)
+
+mpair_5_high = match.data(pair_5_high)
+#head(mpair_5_high)
+```
+
+```{r Estimating Treatment Effects using Pairing 3 Matches}
+mpair5_low_fit <- lm(Y ~ . -Y -weights -subclass,
+                 data = mpair_5_low,
+                 weights = weights)
+
+coeftest(mpair5_low_fit, vcov. = vcovCL, cluster = ~subclass)
+
+
+mpair5_high_fit <- lm(Y ~ . -Y -weights -subclass,
+                 data = mpair_5_high,
+                 weights = weights)
+
+#coeftest(mpair5_high_fit, vcov. = vcovCL, cluster = ~subclass)
+```
+
+
+#Linear Propensity Score
+The distance of Propensity Score is defined as:
+$D_{ij}=|e_i-e_j|$
+Obtained by applying the logit function on the Propensity Scores.
+Matching on the linear propensity score can be particularly effective in terms of reducing bias.
+Linear propensity score matching is same with propensity score to entail forming matched sets of treated and untreated subjects who share a similar value of the propensity score. Once a matched sample has been formed, the treatment effect can be estimated by directly comparing outcomes between treated and untreated subjects in the matched sample. Once the effect of treatment has been estimated in the propensity score matched sample, the variance of the estimated treatment effect and its statistical significance can be estimated. 
+After the matched sets are obtained, Linear Propensity Score asks to calculate a “subclass effects” for each matched set/subclass, and then estimate overall ATE by an weighted average of the subclass effects where weights would be the number of individuals in each subclass.
+
+
+Linear Propensity score performed well for low dimensional dataset as explained above for standard propensity score.
+Linear Propensity Score didn't perform as well for high dimension as low dimensional dataset for the same reason discussed above for standard Propensity Score.
+
+```{r ATE(average treatment effect), running time of pairing 3}
+linear.Propensity.Score.ate <- function(data){
+  start_time <- Sys.time()
+  match_full<-matchit(A ~ .-Y,data=data,method="nearest",distance="glm",link = "linear.logit")
+  data.fullMatching <- match.data(match_full)
+  x = data.fullMatching %>% group_by(subclass,A) %>% summarise(mean_y = mean(Y), .groups = 'drop')
+  group_ate = x %>% group_by(subclass) %>% summarise(treat_eff = mean_y[A == 1] - mean_y[A == 0], .groups = 'drop')
+  group_n = data.fullMatching %>% group_by(subclass) %>% count()
+  ate = sum(group_ate$treat_eff*group_n$n/nrow(data))
+  end_time <- Sys.time()
+  return(list(ATE=ate,running_time = end_time - start_time))
+}
+
+cat("ATE for low dimension is:", linear.Propensity.Score.ate(lowDim_data)$ATE, ".\n")
+cat("ATE for high dimension is:", linear.Propensity.Score.ate(highDim_data)$ATE, ".\n")
+cat("Processing time for low dimensional data is" ,linear.Propensity.Score.ate(lowDim_data)$running_time, "seconds", ".\n")
+cat("Processing time for high dimensional data is" ,linear.Propensity.Score.ate(highDim_data)$running_time, "seconds", ".\n")
+
+
+true_low_ATE<-2.0901
+true_high_ATE<- -54.8558
+
+cat("ATE error for low dimension is:", true_low_ATE-linear.Propensity.Score.ate(lowDim_data)$ATE, ".\n")
+cat("ATE error for high dimension is:", true_high_ATE-linear.Propensity.Score.ate(highDim_data)$ATE, ".\n")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
