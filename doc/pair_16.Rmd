@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Stratification by Propensity Score Algorithm"
 author: "N/A"
 date: "3/29/2021"
 output: html_document
@@ -11,12 +11,14 @@ if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-project.org")
 if(!require(sandwich)) install.packages("sandwich", repos = "http://cran.us.r-project.org")
+if(!require(broom)) install.packages("broom", repos = "http://cran.us.r-project.org")
 
 library(MatchIt)
 library(dplyr)
 library(ggplot2)
 library(lmtest) 
 library(sandwich) 
+library(broom)
 ```
 
 
@@ -24,8 +26,8 @@ library(sandwich)
 
 ```{r Difference in Means Pre-Analysis, echo=FALSE}
 # Reading in the datasets as R Dataframes
-highDim_data = read.csv('./data/highDim_dataset.csv')
-lowDim_data = read.csv('./data/lowDim_dataset.csv')
+highDim_data = read.csv("/data/highDim_dataset.csv")
+lowDim_data = read.csv("/data/lowDim_dataset.csv")
 
 highDim_data %>% 
   group_by(A) %>% 
@@ -91,35 +93,22 @@ ps_ld_df %>%
   theme_bw()
 ```
 
-
-
-### Stratify the Data by Propensity score
-```{r Stratification }
-n_strat <- 7
-
-
-
-hd_strat_divider <- n_strat/nrow(ps_hd_df)
-strat_hd_df <- ps_hd_df %>% arrange(prop_score) %>%
-  mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1)
-
-
-
-
-
-ld_strat_divider <- n_strat/nrow(ps_ld_df)
-strat_ld_df <- ps_ld_df %>% arrange(prop_score) %>%
-  mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1)
-
-```
-
-## Find differences of Means between each stratum and weights for each stratum
+## Perform stratification and find difference of means and weights
 ```{r}
+
+
+n_strat <- 16
 
 #High Dimensional Data
 
 
-hd_prep <- system.time(
+hd_prep <- system.time({
+  
+  #Stratify the Data by Propensity score
+  hd_strat_divider <- n_strat/nrow(ps_hd_df);
+  strat_hd_df <- ps_hd_df %>% arrange(prop_score) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1);
+  
   #Differences in means
   diff_mean_hd <- strat_hd_df %>%
     group_by(treatment, stratum) %>%
@@ -128,7 +117,7 @@ hd_prep <- system.time(
     ungroup(treatment) %>%
     mutate(diff_mean = sum(mean_treat)) %>%
     filter(treatment == 0) %>%
-    select(stratum, diff_mean),
+    select(stratum, diff_mean);
 
   #Weights for each stratum
   diff_weight_hd <- strat_hd_df %>%
@@ -137,13 +126,22 @@ hd_prep <- system.time(
     mutate(weight = n/nrow(strat_hd_df)) %>%
     left_join(diff_mean_hd, by = "stratum") %>%
     select(weight, diff_mean)
-)
+})
+
+
 
 
 
 #Low Dimensional Data
 
-ld_prep <- system.time(
+ld_prep <- system.time({
+  
+  #Stratify the Data by Propensity score
+  ld_strat_divider <- n_strat/nrow(ps_ld_df);
+  strat_ld_df <- ps_ld_df %>% arrange(prop_score) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1);
+
+
   #Differences in means
   diff_mean_ld <- strat_ld_df %>%
     group_by(treatment, stratum) %>%
@@ -152,7 +150,7 @@ ld_prep <- system.time(
     ungroup(treatment) %>%
     mutate(diff_mean = sum(mean_treat)) %>%
     filter(treatment == 0) %>%
-    select(stratum, diff_mean),
+    select(stratum, diff_mean);
 
   #Weights for each stratum
   diff_weight_ld <- strat_ld_df %>%
@@ -161,10 +159,73 @@ ld_prep <- system.time(
     mutate(weight = n/nrow(strat_ld_df)) %>%
     left_join(diff_mean_ld, by = "stratum") %>%
     select(weight, diff_mean)
-) 
+}) 
 
 
 ```
+
+
+### Alternative method that performs regression on each stratum
+
+```{r}
+
+
+n_strat <- 16
+
+#High Dimensional Data
+
+
+hd_prep_alt <- system.time({
+  
+  #Stratify the Data by Propensity score
+  hd_strat_divider <- n_strat/nrow(ps_hd_df);
+  strat_hd_df_alt <- ps_hd_df %>% arrange(prop_score) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1);
+  
+  #Perform Regression on each Stratum
+  reg_stratum_hd <- strat_hd_df_alt %>%
+    group_by(stratum) %>%
+    do(tidy(lm(Y ~ treatment, .)));
+  
+  #Will end up with a matrix of regression terms alternating with (Intercept) and Y.
+  #Since we are subtracting the point on the regression where Y(our x term) is 0 from where Y is 1,
+  #We are doing this type of equation:      Result = (Intercept + (1* Y)) - (Intecept) = Y
+  #Thus, we only need the estimate for the Y's
+  
+  reg_est_result_hd <- reg_stratum_hd %>%
+    filter(term == "treatment") %>%
+    select(stratum, estimate)
+})
+
+
+#Low Dimensional Data
+
+ld_prep_alt <- system.time({
+  
+  #Stratify the Data by Propensity score
+  ld_strat_divider <- n_strat/nrow(ps_ld_df);
+  strat_ld_df_alt <- ps_ld_df %>% arrange(prop_score) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1);
+
+
+  #Perform Regression on each Stratum
+  reg_stratum_ld <- strat_ld_df_alt %>%
+    group_by(stratum) %>%
+    do(tidy(lm(Y ~ treatment, .)));
+  
+  #Will end up with a matrix of regression terms alternating with (Intercept) and Y.
+  #Since we are subtracting the point on the regression where Y(our x term) is 0 from where Y is 1,
+  #We are doing this type of equation:      Result = (Intercept + (1* Y)) - (Intecept) = Y
+  #Thus, we only need the estimate for the Y's
+  
+  reg_est_result_ld <- reg_stratum_ld %>%
+    filter(term == "treatment") %>%
+    select(stratum, estimate)
+}) 
+
+
+```
+
 
 
 ### Calculate the ATE from summing the products of the mean and weight
@@ -172,6 +233,9 @@ ld_prep <- system.time(
 ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
 
+
+ATE_hd_alt <- sum(reg_est_result_hd$estimate)/n_strat
+ATE_ld_alt <- sum(reg_est_result_ld$estimate)/n_strat
 
 ```
 
