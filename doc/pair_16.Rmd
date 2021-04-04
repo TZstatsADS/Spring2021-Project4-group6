@@ -97,7 +97,7 @@ ps_ld_df %>%
 ```{r}
 
 
-n_strat <- 16
+n_strat <- 10
 
 #High Dimensional Data
 
@@ -164,8 +164,72 @@ ld_prep <- system.time({
 
 ```
 
+### Alternate Method that performs regression on each stratum by Y with A and Vs. Then averages the coefficients 
+### for A in each stratum to get the ATE
 
-### Alternative method that performs regression on each stratum
+```{r}
+
+
+n_strat <- 17
+
+#High Dimensional Data
+
+
+hd_prep_alt <- system.time({
+  hd_strat_divider <- n_strat/nrow(ps_hd_df);
+  
+  #Append propensity score to the initial dataset
+
+  hd_pscore <- matrix(ps_hd_df$prop_score, ncol = 1);
+  hd_df_pscore <- cbind(highDim_data, hd_pscore);
+  
+  strat_hd_df_alt <- hd_df_pscore %>% arrange(hd_pscore) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1) %>%
+    select(-hd_pscore);
+  
+  strat_hd_reg <- strat_hd_df_alt %>% group_by(stratum) %>%
+    do(strat_reg = lm(Y ~ A + .-stratum, data = .)) %>%
+    mutate(coefs = list(strat_reg[["coefficients"]])) %>%
+    select(-strat_reg) %>%
+    summarize(ajz = coefs[["A"]], .groups = "drop")
+  
+ 
+  
+  
+  
+})
+
+
+#Low Dimensional Data
+
+ld_prep_alt <- system.time({
+  
+  ld_strat_divider <- n_strat/nrow(ps_ld_df);
+  
+  #Append propensity score to the initial dataset
+
+  ld_pscore <- matrix(ps_ld_df$prop_score, ncol = 1);
+  ld_df_pscore <- cbind(lowDim_data, ld_pscore);
+  
+  strat_ld_df_alt <- ld_df_pscore %>% arrange(ld_pscore) %>%
+    mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1) %>%
+    select(-ld_pscore);
+  
+  strat_ld_reg <- strat_ld_df_alt %>% group_by(stratum) %>%
+    do(strat_reg = lm(Y ~ A + .-stratum, data = .)) %>%
+    mutate(coefs = list(strat_reg[["coefficients"]])) %>%
+    select(-strat_reg) %>%
+    summarize(ajz = coefs[["A"]], .groups = "drop")
+  
+  mean(strat_ld_reg$ajz)
+  
+  
+}) 
+
+
+```
+
+### Second Alternative method that performs regression on each stratum by Y and A
 
 ```{r}
 
@@ -175,15 +239,15 @@ n_strat <- 16
 #High Dimensional Data
 
 
-hd_prep_alt <- system.time({
+hd_prep_alt2 <- system.time({
   
   #Stratify the Data by Propensity score
   hd_strat_divider <- n_strat/nrow(ps_hd_df);
-  strat_hd_df_alt <- ps_hd_df %>% arrange(prop_score) %>%
+  strat_hd_df_alt2 <- ps_hd_df %>% arrange(prop_score) %>%
     mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1);
   
   #Perform Regression on each Stratum
-  reg_stratum_hd <- strat_hd_df_alt %>%
+  reg_stratum_hd <- strat_hd_df_alt2 %>%
     group_by(stratum) %>%
     do(tidy(lm(Y ~ treatment, .)));
   
@@ -200,16 +264,16 @@ hd_prep_alt <- system.time({
 
 #Low Dimensional Data
 
-ld_prep_alt <- system.time({
+ld_prep_alt2 <- system.time({
   
   #Stratify the Data by Propensity score
   ld_strat_divider <- n_strat/nrow(ps_ld_df);
-  strat_ld_df_alt <- ps_ld_df %>% arrange(prop_score) %>%
+  strat_ld_df_alt2 <- ps_ld_df %>% arrange(prop_score) %>%
     mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1);
 
 
   #Perform Regression on each Stratum
-  reg_stratum_ld <- strat_ld_df_alt %>%
+  reg_stratum_ld <- strat_ld_df_alt2 %>%
     group_by(stratum) %>%
     do(tidy(lm(Y ~ treatment, .)));
   
@@ -227,15 +291,17 @@ ld_prep_alt <- system.time({
 ```
 
 
-
-### Calculate the ATE from summing the products of the mean and weight
+### Calculates the ATE
 ```{r}
 ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
 
+ATE_hd_alt <-  mean(strat_hd_reg$ajz)
+ATE_ld_alt <-  mean(strat_ld_reg$ajz)
 
-ATE_hd_alt <- sum(reg_est_result_hd$estimate)/n_strat
-ATE_ld_alt <- sum(reg_est_result_ld$estimate)/n_strat
+
+ATE_hd_alt2 <- sum(reg_est_result_hd$estimate)/n_strat
+ATE_ld_alt2 <- sum(reg_est_result_ld$estimate)/n_strat
 
 ```
 
