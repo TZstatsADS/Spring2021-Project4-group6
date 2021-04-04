@@ -13,18 +13,20 @@ if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-project.org")
 if(!require(sandwich)) install.packages("sandwich", repos = "http://cran.us.r-project.org")
+if(!require(optmatch)) install.packages("optmatch", repos = "http://cran.us.r-project.org")
 
 library(MatchIt)
 library(dplyr)
 library(ggplot2)
 library(lmtest) 
 library(sandwich) 
+library(optmatch)
 ```
 
 ```{r Difference in Means Pre-Analysis, echo=FALSE}
 # Reading in the datasets as R Dataframes
-highDim_data = read.csv('./data/highDim_dataset.csv')
-lowDim_data = read.csv('./data/lowDim_dataset.csv')
+highDim_data = read.csv('/Users/darylkow/Documents/Columbia_Work/Spring/STAT_GR5243/data/highDim_dataset.csv')
+lowDim_data = read.csv('/Users/darylkow/Documents/Columbia_Work/Spring/STAT_GR5243/data/lowDim_dataset.csv')
 
 highDim_data %>% 
   group_by(A) %>% 
@@ -83,41 +85,43 @@ ps_ld_df %>%
   xlab("Probability of being exposed") +
   theme_bw()
 ```
-# Pairing 1
+# Pairing 1 Low Dim
 ### Algorithm: Propensity Matching
 ### Distance Measure: Mahalanobis
 ### Propensity Score Estimation: NA
-```{r Pairing 1 Implementing Matching Algo, echo=FALSE}
+```{r Pairing 1 Implementing Matching Low Dim, echo=FALSE}
 # Algorithm: Propensity Matching
 # Distance Measure: Mahalanobis
 # Propensity Score Estimation: NA
 # Matching performed on low dimension dataset
+covs = colnames(lowDim_data)[-2:-1]
 system.time({
   if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
     print('There are null values in the dataset')
     break
     } else {
-    pair_1 <- matchit(A ~ .-Y,
+    pair_1 <- matchit(A ~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 + V13 + V14 + V15 + V16 + V17 + V18 + V19 + V20 + V21 + V22,
                       data=lowDim_data,
-                      method="nearest",
-                      distance="mahalanobis")
+                      method="full",
+                      distance="mahalanobis",
+                      estimand = "ATE")
   }  
 })
 ```
 From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
 "Although matching on the propensity score is often effective at eliminating differences between the treatment groups to achieve covariate balance, its performance in this regard must be assessed. If covariates remain imbalanced after matching, the matching is considered unsuccessful, and a different matching specification should be tried. MatchIt offers a few tools for the assessment of covariate balance after matching. These include graphical and statistical methods. More detail on the interpretation of the included plots and statistics can be found in vignette("assessing-balance").
 In addition to covariate balance, the quality of the match is determined by how many units remain after matching. Matching often involves discarding units that are not paired with other units, and some matching options, such as setting restrictions for common support or calipers, can further decrease the number of remaining units. If, after matching, the remaining sample size is small, the resulting effect estimate may be imprecise. In many cases, there will be a trade-off between balance and remaining sample size. How to optimally choose among them is an instance of the fundamental bias-variance trade-off problem that cannot be resolved without substantive knowledge of the phenomena under study. Prospective power analyses can be used to determine how small a sample can be before necessary precision is sacrificed."
-```{r Assessing Quality of Pairing 1 Matches, echo=FALSE}
+```{r Assessing Quality of Pairing 1 Matches Low Dim, echo=FALSE}
 pair_1
 summary(pair_1, un = FALSE)
 # Unable to plot for Mahalanobis as there is no propensity score calculcated for this distance measure
 # plot(pair_1, type = "jitter", interactive = FALSE)
 ```
-```{r Preparing Data Frame based on Pairing 1 Matches, echo=FALSE}
+```{r Preparing Data Frame based on Pairing 1 Matches Low Dim, echo=FALSE}
 mpair_1 = match.data(pair_1)
 head(mpair_1)
 ```
-```{r Estimating Treatment Effects using Pairing 1 Matches, echo=FALSE}
+```{r Estimating Treatment Effects using Pairing 1 Matches Low Dim, echo=FALSE}
 mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
                  data = mpair_1,
                  weights = weights)
@@ -125,11 +129,11 @@ mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
 coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
 ```
 
-# Pairing 2
+# Pairing 2 Low Dim
 ### Algorithm: Propensity Matching
 ### Distance Measure: Propensity Score
 ### Propensity Score Estimation: Logistic Regression
-```{r Pairing 2 Implementing Matching Algo, echo=FALSE}
+```{r Pairing 2 Implementing Matching Algo Low Dim, echo=FALSE}
 # Algorithm: Propensity Matching
 # Distance Measure: Propensity Score
 # Propensity Score Estimation: Logistic Regression
@@ -140,23 +144,107 @@ system.time({
     } else {
     pair_2 <- matchit(A ~ .-Y,
                       data=lowDim_data,
-                      method="nearest",
+                      method="subclass",
                       distance="glm",
-                      link="logit")
+                      link="logit",
+                      estimand = "ATE")
   }  
 })
 ```
-```{r Assessing Quality of Pairing 2 Matches, echo=FALSE}
+```{r Assessing Quality of Pairing 2 Matches Low Dim, echo=FALSE}
 pair_2
 summary(pair_2, un = FALSE)
 plot(pair_2, type = "jitter", interactive = FALSE)
 ```
-```{r Preparing Data Frame based on Pairing 2 Matches, echo=FALSE}
+```{r Preparing Data Frame based on Pairing 2 Matches Low Dim, echo=FALSE}
 mpair_2 = match.data(pair_2)
 head(mpair_2)
 ```
-```{r Estimating Treatment Effects using Pairing 2 Matches, echo=FALSE}
-mpair2_fit <- lm(Y ~ . -Y -weights -subclass,
+```{r Estimating Treatment Effects using Pairing 2 Matches Low Dim, echo=FALSE}
+mpair2_fit <- lm(Y ~ . -Y -weights -subclass -distance,
+                 data = mpair_2,
+                 weights = weights)
+
+coeftest(mpair2_fit, vcov. = vcovCL, cluster = ~subclass)
+```
+
+# Pairing 1 High Dim
+### Algorithm: Propensity Matching
+### Distance Measure: Mahalanobis
+### Propensity Score Estimation: NA
+```{r Pairing 1 Implementing Matching High Dim, echo=FALSE}
+# Algorithm: Propensity Matching
+# Distance Measure: Mahalanobis
+# Propensity Score Estimation: NA
+# Matching performed on low dimension dataset
+covs = colnames(highDim_data)[-2:-1]
+system.time({
+  if (length(na.omit(highDim_data)) != length(highDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_1 <- matchit(A ~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 + V13 + V14 + V15 + V16 + V17 + V18 + V19 + V20 + V21 + V22 + V23 + V24 + V25 + V26 + V27 + V28 + V29 + V30 + V31 + V32 + V33 + V34 + V35 + V36 + V37 + V38 + V39 + V40 + V41 + V42 + V43 + V44 + V45 + V46 + V47 + V48 + V49 + V50 + V51 + V52 + V53 + V54 + V55 + V56 + V57 + V58 + V59 + V60 + V61 + V62 + V63 + V64 + V65 + V66 + V67 + V68 + V69 + V70 + V71 + V72 + V73 + V74 + V75 + V76 + V77 + V78 + V79 + V80 + V81 + V82 + V83 + V84 + V85 + V86 + V87 + V88 + V89 + V90 + V91 + V92 + V93 + V94 + V95 + V96 + V97 + V98 + V99 + V100 + V101 + V102 + V103 + V104 + V105 + V106 + V107 + V108 + V109 + V110 + V111 + V112 + V113 + V114 + V115 + V116 + V117 + V118 + V119 + V120 + V121 + V122 + V123 + V124 + V125 + V126 + V127 + V128 + V129 + V130 + V131 + V132 + V133 + V134 + V135 + V136 + V137 + V138 + V139 + V140 + V141 + V142 + V143 + V144 + V145 + V146 + V147 + V148 + V149 + V150 + V151 + V152 + V153 + V154 + V155 + V156 + V157 + V158 + V159 + V160 + V161 + V162 + V163 + V164 + V165 + V166 + V167 + V168 + V169 + V170 + V171 + V172 + V173 + V174 + V175 + V176 + V177 + V178 + V179 + V180 + V181 + V182 + V183 + V184 + V185,
+                      data=highDim_data,
+                      method="full",
+                      distance="mahalanobis",
+                      estimand = "ATE")
+  }  
+})
+```
+From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
+"Although matching on the propensity score is often effective at eliminating differences between the treatment groups to achieve covariate balance, its performance in this regard must be assessed. If covariates remain imbalanced after matching, the matching is considered unsuccessful, and a different matching specification should be tried. MatchIt offers a few tools for the assessment of covariate balance after matching. These include graphical and statistical methods. More detail on the interpretation of the included plots and statistics can be found in vignette("assessing-balance").
+In addition to covariate balance, the quality of the match is determined by how many units remain after matching. Matching often involves discarding units that are not paired with other units, and some matching options, such as setting restrictions for common support or calipers, can further decrease the number of remaining units. If, after matching, the remaining sample size is small, the resulting effect estimate may be imprecise. In many cases, there will be a trade-off between balance and remaining sample size. How to optimally choose among them is an instance of the fundamental bias-variance trade-off problem that cannot be resolved without substantive knowledge of the phenomena under study. Prospective power analyses can be used to determine how small a sample can be before necessary precision is sacrificed."
+```{r Assessing Quality of Pairing 1 Matches High Dim, echo=FALSE}
+pair_1
+summary(pair_1, un = FALSE)
+# Unable to plot for Mahalanobis as there is no propensity score calculcated for this distance measure
+# plot(pair_1, type = "jitter", interactive = FALSE)
+```
+```{r Preparing Data Frame based on Pairing 1 Matches High Dim, echo=FALSE}
+mpair_1 = match.data(pair_1)
+head(mpair_1)
+```
+```{r Estimating Treatment Effects using Pairing 1 Matches High Dim, echo=FALSE}
+mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
+                 data = mpair_1,
+                 weights = weights)
+
+coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
+```
+
+# Pairing 2 High Dim
+### Algorithm: Propensity Matching
+### Distance Measure: Propensity Score
+### Propensity Score Estimation: Logistic Regression
+```{r Pairing 2 Implementing Matching Algo High Dim, echo=FALSE}
+# Algorithm: Propensity Matching
+# Distance Measure: Propensity Score
+# Propensity Score Estimation: Logistic Regression
+system.time({
+  if (length(na.omit(highDim_data)) != length(highDim_data)) {
+    print('There are null values in the dataset')
+    break
+    } else {
+    pair_2 <- matchit(A ~ .-Y,
+                      data=highDim_data,
+                      method="full",
+                      distance="glm",
+                      link="logit",
+                      estimand = "ATE")
+  }  
+})
+```
+```{r Assessing Quality of Pairing 2 Matches High Dim, echo=FALSE}
+pair_2
+summary(pair_2, un = FALSE)
+plot(pair_2, type = "jitter", interactive = FALSE)
+```
+```{r Preparing Data Frame based on Pairing 2 Matches High Dim, echo=FALSE}
+mpair_2 = match.data(pair_2)
+head(mpair_2)
+```
+```{r Estimating Treatment Effects using Pairing 2 Matches High Dim, echo=FALSE}
+mpair2_fit <- lm(Y ~ . -Y -weights -subclass -distance,
                  data = mpair_2,
                  weights = weights)
 
