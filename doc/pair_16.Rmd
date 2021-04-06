@@ -97,7 +97,7 @@ ps_ld_df %>%
 ```{r}
 
 
-n_strat <- 10
+n_strat <- 7
 
 #High Dimensional Data
 
@@ -125,11 +125,13 @@ hd_prep <- system.time({
     tally() %>%
     mutate(weight = n/nrow(strat_hd_df)) %>%
     left_join(diff_mean_hd, by = "stratum") %>%
-    select(weight, diff_mean)
+    select(weight, diff_mean);
+  
+  #Calculate the ATE
+  ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 })
 
-
-
+time_hd <-sum(hd_prep)
 
 
 #Low Dimensional Data
@@ -158,9 +160,14 @@ ld_prep <- system.time({
     tally() %>%
     mutate(weight = n/nrow(strat_ld_df)) %>%
     left_join(diff_mean_ld, by = "stratum") %>%
-    select(weight, diff_mean)
+    select(weight, diff_mean);
+  
+  #Calculate the ATE
+  ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
+
 }) 
 
+time_ld <- sum(ld_prep)
 
 ```
 
@@ -170,7 +177,7 @@ ld_prep <- system.time({
 ```{r}
 
 
-n_strat <- 17
+n_strat <- 7
 
 #High Dimensional Data
 
@@ -191,14 +198,14 @@ hd_prep_alt <- system.time({
     do(strat_reg = lm(Y ~ A + .-stratum, data = .)) %>%
     mutate(coefs = list(strat_reg[["coefficients"]])) %>%
     select(-strat_reg) %>%
-    summarize(ajz = coefs[["A"]], .groups = "drop")
-  
+    summarize(ajz = coefs[["A"]], .groups = "drop");
  
-  
-  
+  #Calculate the ATE
+  ATE_hd_alt <-  mean(strat_hd_reg$ajz)
   
 })
 
+time_hd_alt <- sum(hd_prep_alt)
 
 #Low Dimensional Data
 
@@ -220,13 +227,13 @@ ld_prep_alt <- system.time({
     mutate(coefs = list(strat_reg[["coefficients"]])) %>%
     select(-strat_reg) %>%
     summarize(ajz = coefs[["A"]], .groups = "drop")
-  
-  mean(strat_ld_reg$ajz)
-  
+
+  #Calculate the ATE
+  ATE_ld_alt <-  mean(strat_ld_reg$ajz)
   
 }) 
 
-
+time_ld_alt <- sum(ld_prep_alt)
 ```
 
 ### Second Alternative method that performs regression on each stratum by Y and A
@@ -234,7 +241,7 @@ ld_prep_alt <- system.time({
 ```{r}
 
 
-n_strat <- 16
+n_strat <- 5
 
 #High Dimensional Data
 
@@ -258,8 +265,13 @@ hd_prep_alt2 <- system.time({
   
   reg_est_result_hd <- reg_stratum_hd %>%
     filter(term == "treatment") %>%
-    select(stratum, estimate)
+    select(stratum, estimate);
+  
+  #Calculate the ATE
+  ATE_hd_alt2 <- sum(reg_est_result_hd$estimate)/n_strat
 })
+
+time_hd_alt2 <- sum(hd_prep_alt2)
 
 
 #Low Dimensional Data
@@ -284,24 +296,15 @@ ld_prep_alt2 <- system.time({
   
   reg_est_result_ld <- reg_stratum_ld %>%
     filter(term == "treatment") %>%
-    select(stratum, estimate)
+    select(stratum, estimate);
+  
+  #Calculate the ATE
+  
+  ATE_ld_alt2 <- sum(reg_est_result_ld$estimate)/n_strat
 }) 
 
+time_ld_alt2 <- sum(ld_prep_alt2)
 
 ```
 
-
-### Calculates the ATE
-```{r}
-ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
-ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
-
-ATE_hd_alt <-  mean(strat_hd_reg$ajz)
-ATE_ld_alt <-  mean(strat_ld_reg$ajz)
-
-
-ATE_hd_alt2 <- sum(reg_est_result_hd$estimate)/n_strat
-ATE_ld_alt2 <- sum(reg_est_result_ld$estimate)/n_strat
-
-```
 
