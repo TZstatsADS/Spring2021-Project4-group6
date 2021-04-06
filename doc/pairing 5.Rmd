@@ -106,7 +106,7 @@ system.time({
     } else {
     pair_5_low <- matchit(A ~ .-Y,
                       data=lowDim_data,
-                      method="nearest",
+                      method="full",
                       distance="glm",
                       link = "linear.logit")
   }  
@@ -184,7 +184,7 @@ Linear Propensity Score didn't perform as well for high dimension as low dimensi
 ```{r ATE(average treatment effect), running time of pairing 3}
 linear.Propensity.Score.ate <- function(data){
   start_time <- Sys.time()
-  match_full<-matchit(A ~ .-Y,data=data,method="nearest",distance="glm",link = "linear.logit")
+  match_full<-matchit(A ~ .-Y,data=data,method="full",distance="glm",link = "linear.logit")
   data.fullMatching <- match.data(match_full)
   x = data.fullMatching %>% group_by(subclass,A) %>% summarise(mean_y = mean(Y), .groups = 'drop')
   group_ate = x %>% group_by(subclass) %>% summarise(treat_eff = mean_y[A == 1] - mean_y[A == 0], .groups = 'drop')
