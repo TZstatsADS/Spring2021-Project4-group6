@@ -5,14 +5,14 @@
 Term: Spring 2021
 
 + Team #6
-+ Projec title: Lorem ipsum dolor sit amet
++ Projec title: Causal Inference Algorithms Evaluation
 + Team members
 	+ Daryl Kow
 	+ Peter Kwauk
 	+ Yushi Pan
 	+ Yuqi Xing
 	+ Renyin Zhang
-+ Project summary: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
++ Project summary: In this project, our group was assigned to implement 3 different algorithms (Propensity Matching, Doubly Robust Estimation, and Stratification) to calculate the average effect of the treatment (ATE) for two datasets: high dimensional data and low dimensional data. For Propensity Matching algorithm, we had 3 different distance measures: Mahalanobis, propensity score, and linear propensity score. Except for the Mahalanobis method, we used logistic regression to estimate the propensity score. At the end we compared the performance (ATE error & running time) of each algorithm.
 	
 **Contribution statement**: 
 + Daryl: Implemented pairing 1 and 2 for the low dimensional data and tuned the respective algorithms for the best matching method (based on ATE). Contributed to slides on pairing 1 and 2, as well as the motivations for propensity matching.
