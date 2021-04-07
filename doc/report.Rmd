@@ -84,7 +84,7 @@ mahalanobis.ate <- function(data){
 ```
 
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 1, echo=FALSE}
 pair1high = mahalanobis.ate(highDim_data)
 
 cat("ATE for high dimensional data is:", pair1high$ATE, ".\n")
@@ -93,7 +93,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair1high$ATE, ".\n
 ```
 
 #### Low Dim data
-```{r lowDim, echo=FALSE}
+```{r lowDim for pairing 1, echo=FALSE}
 pair1low = mahalanobis.ate(lowDim_data)
 
 cat("ATE for low dimensional data is:", pair1low$ATE, ".\n")
@@ -127,7 +127,7 @@ Propensity.Score.ate <- function(data, methods, link){
 
 ### optimal full matching
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 2 full matching, echo=FALSE}
 pair2fhigh = Propensity.Score.ate(highDim_data, methods="full", link="logit")
 
 cat("ATE for high dimensional data is:", pair2fhigh$ATE, ".\n")
@@ -136,7 +136,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair2fhigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r}
+```{r lowDim for pairing 2 full matching, echo=FALSE}
 pair2flow = Propensity.Score.ate(lowDim_data, methods="full", link="logit")
 
 cat("ATE for low dimensional data is:", pair2flow$ATE, ".\n")
@@ -146,7 +146,7 @@ cat("ATE error for low dimensional data is:", true_low_ATE-pair2flow$ATE, ".\n")
 
 ### subclassification
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 2 subclassification, echo=FALSE}
 pair2shigh = Propensity.Score.ate(highDim_data, methods="subclass", link="logit")
 
 cat("ATE for high dimensional data is:", pair2shigh$ATE, ".\n")
@@ -155,7 +155,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair2shigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r}
+```{r lowDim for pairing 2 subclassification, echo=FALSE}
 pair2slow = Propensity.Score.ate(lowDim_data, methods="subclass", link="logit")
 
 cat("ATE for low dimensional data is:", pair2slow$ATE, ".\n")
@@ -282,7 +282,7 @@ DoublyRobustEst <- function(data) {
 
 #### highDim data
 
-```{r highDim data, echo=FALSE}
+```{r highDim data for pairing 12, echo=FALSE}
 DRE.high <- DoublyRobustEst(highDim_data)
 diff.high <- true_high_ATE-DRE.high[,1]
 
@@ -293,7 +293,7 @@ cat("ATE error for high dimensional data is:", diff.high, ".\n")
 
 #### lowDim data
 
-```{r lowDim data, echo=FALSE}
+```{r lowDim data for pairing 12, echo=FALSE}
 DRE.low <- DoublyRobustEst(lowDim_data)
 true.ATE.low <- 2.0901
 diff.low <- true_low_ATE-DRE.low[,1]
