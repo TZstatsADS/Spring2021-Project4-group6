@@ -16,7 +16,7 @@ Term: Spring 2021
 
 The major finding of our project is shown in the table below:
 
-![](doc/figs/summary.png)
+![](figs/summary.png)
 	
 **Contribution statement**: 
 + Daryl: Implemented pairing 1 and 2 for the low dimensional data and tuned the respective algorithms for the best matching method (based on ATE). Contributed to slides on pairing 1 and 2, as well as the motivations for propensity matching.
