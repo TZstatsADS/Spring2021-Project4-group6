@@ -126,6 +126,7 @@ mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
                  data = mpair_1,
                  weights = weights)
 
+pair1_lowdim_ATE = mpair1_fit$coefficients['A']
 coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
 ```
 
@@ -166,6 +167,7 @@ mpair2_fit <- lm(Y ~ . -Y -weights -subclass -distance,
                  weights = weights)
 
 coeftest(mpair2_fit, vcov. = vcovCL, cluster = ~subclass)
+pair2_lowdim_ATE = mpair2_fit$coefficients['A']
 ```
 
 # Pairing 1 High Dim
@@ -208,7 +210,7 @@ head(mpair_1)
 mpair1_fit <- lm(Y ~ . -Y -weights -subclass,
                  data = mpair_1,
                  weights = weights)
-
+pair1_highdim_ATE = mpair1_fit$coefficients['A']
 coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
 ```
 
@@ -247,6 +249,6 @@ head(mpair_2)
 mpair2_fit <- lm(Y ~ . -Y -weights -subclass -distance,
                  data = mpair_2,
                  weights = weights)
-
+pair2_highdim_ATE = mpair1_fit$coefficients['A']
 coeftest(mpair2_fit, vcov. = vcovCL, cluster = ~subclass)
 ```
