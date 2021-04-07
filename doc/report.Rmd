@@ -1,7 +1,7 @@
 ---
 title: "Summary Report of Pairings 1 2 5 12 And 16"
-author: "Renyin Zhang"
-date: "4/2/2021"
+author: "Group 6"
+date: "4/7/2021"
 output: html_document
 ---
 
@@ -30,7 +30,7 @@ library(broom)
 ```
 
 ## Pre-Analysis
-```{r Difference in Means Pre-Analysis, echo=FALSE}
+```{r Difference in Means Pre-Analysis, echo=FALSE, warning=FALSE}
 # Reading in the datasets as R Dataframes
 highDim_data = read.csv("../data/highDim_dataset.csv")
 lowDim_data = read.csv("../data/lowDim_dataset.csv")
@@ -39,7 +39,7 @@ highDim_data %>%
   group_by(A) %>% 
   summarise(n=n(),
             mean_outcome=mean(Y),
-            std_error = sd(Y) / sqrt(n))
+            std_error = sd(Y) / sqrt(n), .groups = "drop")
 
 with(highDim_data, t.test(Y ~ A))
 
@@ -47,7 +47,7 @@ lowDim_data %>%
   group_by(A) %>% 
   summarise(n=n(),
             mean_outcome=mean(Y),
-            std_error = sd(Y) / sqrt(n))
+            std_error = sd(Y) / sqrt(n), .groups = "drop")
 
 with(lowDim_data, t.test(Y ~ A))
 
@@ -58,8 +58,8 @@ true_high_ATE<- -54.8558
 
 ## Pairing 1
 >Algorithm: `Propensity Matching`
-Distance Measure: `Mahalanobis`
-Propensity Score Estimation: `NA`
+>Distance Measure: `Mahalanobis`
+>Propensity Score Estimation: `NA`
 
 ### Introduction of the algorithm
 From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
@@ -84,7 +84,7 @@ mahalanobis.ate <- function(data){
 ```
 
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 1, echo=FALSE}
 pair1high = mahalanobis.ate(highDim_data)
 
 cat("ATE for high dimensional data is:", pair1high$ATE, ".\n")
@@ -93,7 +93,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair1high$ATE, ".\n
 ```
 
 #### Low Dim data
-```{r lowDim, echo=FALSE}
+```{r lowDim for pairing 1, echo=FALSE}
 pair1low = mahalanobis.ate(lowDim_data)
 
 cat("ATE for low dimensional data is:", pair1low$ATE, ".\n")
@@ -105,13 +105,13 @@ cat("ATE error for low dimensional data is:", true_low_ATE-pair1low$ATE, ".\n")
 
 ## Pairing 2
 >Algorithm: `Propensity Matching`
-Distance Measure: `Propensity Score`
-Propensity Score Estimation: `Logistic Regression`
+>Distance Measure: `Propensity Score`
+>Propensity Score Estimation: `Logistic Regression`
 
 ### Introduction of the algorithm
 
 
-```{r ATE(average treatment effect), running time of pairing 2}
+```{r ATE(average treatment effect), running time of pairing 2, echo=FALSE}
 Propensity.Score.ate <- function(data, methods, link){
   start_time <- Sys.time()
   match_full<-matchit(A ~ .-Y,data=data,method=methods,distance="glm",link = link, estimand = "ATE")
@@ -127,7 +127,7 @@ Propensity.Score.ate <- function(data, methods, link){
 
 ### optimal full matching
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 2 full, echo=FALSE}
 pair2fhigh = Propensity.Score.ate(highDim_data, methods="full", link="logit")
 
 cat("ATE for high dimensional data is:", pair2fhigh$ATE, ".\n")
@@ -136,7 +136,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair2fhigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r}
+```{r lowDim for pairing 2 full, echo=FALSE}
 pair2flow = Propensity.Score.ate(lowDim_data, methods="full", link="logit")
 
 cat("ATE for low dimensional data is:", pair2flow$ATE, ".\n")
@@ -146,7 +146,7 @@ cat("ATE error for low dimensional data is:", true_low_ATE-pair2flow$ATE, ".\n")
 
 ### subclassification
 #### High Dim data
-```{r highDim, echo=FALSE}
+```{r highDim for pairing 2 sub, echo=FALSE}
 pair2shigh = Propensity.Score.ate(highDim_data, methods="subclass", link="logit")
 
 cat("ATE for high dimensional data is:", pair2shigh$ATE, ".\n")
@@ -155,7 +155,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair2shigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r}
+```{r lowDim for pairing 2 sub, echo=FALSE}
 pair2slow = Propensity.Score.ate(lowDim_data, methods="subclass", link="logit")
 
 cat("ATE for low dimensional data is:", pair2slow$ATE, ".\n")
@@ -168,8 +168,8 @@ cat("ATE error for low dimensional data is:", true_low_ATE-pair2slow$ATE, ".\n")
 
 ## Pairing 5
 >Algorithm: `Propensity Matching`
-Distance Measure: `Linear Propensity Score`
-Propensity Score Estimation: `Logistic Regression`
+>Distance Measure: `Linear Propensity Score`
+>Propensity Score Estimation: `Logistic Regression`
 
 ### Introduction of the algorithm
 The distance of Propensity Score is defined as:
@@ -200,27 +200,27 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair5fhigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r highDim data, echo=FALSE}
+```{r lowDim data, echo=FALSE}
 cat("ATE for low dimensional data is:", pair5flow$ATE, ".\n")
 cat("Processing time for low dimensional data is" ,pair5flow$running_time, "seconds.\n")
 cat("ATE error for low dimensional data is:", true_low_ATE-pair5flow$ATE, ".\n")
 ```
 
 ### subclassification
-```{r ATE(average treatment effect), running time of pairing 5, echo=FALSE}
+```{r subclass, running time of pairing 5, echo=FALSE}
 pair5shigh = Propensity.Score.ate(highDim_data, methods="subclass", link="linear.logit")
 pair5slow = Propensity.Score.ate(lowDim_data, methods="subclass", link="linear.logit")
 ```
 
 #### High Dim data
-```{r highDim data, echo=FALSE}
+```{r highDim data for subclass, echo=FALSE}
 cat("ATE for high dimensional data is:", pair5shigh$ATE, ".\n")
 cat("Processing time for high dimensional data is" ,pair5shigh$running_time, "seconds.\n")
 cat("ATE error for high dimensional data is:", true_high_ATE-pair5shigh$ATE, ".\n")
 ```
 
 #### Low Dim data
-```{r highDim data, echo=FALSE}
+```{r lowDim data for subclass, echo=FALSE}
 cat("ATE for low dimensional data is:", pair5slow$ATE, ".\n")
 cat("Processing time for low dimensional data is" ,pair5slow$running_time, "seconds.\n")
 cat("ATE error for low dimensional data is:", true_low_ATE-pair5slow$ATE, ".\n")
@@ -230,8 +230,8 @@ cat("ATE error for low dimensional data is:", true_low_ATE-pair5slow$ATE, ".\n")
 
 ## Pairing 12
 >Algorithm: `Doubly Robust Estimation`
-Distance Measure: `Propensity Score`
-Propensity Score Estimation: `Logistic Regression`
+>Distance Measure: `Propensity Score`
+>Propensity Score Estimation: `Logistic Regression`
 
 ### Introduction of the algorithm
 
@@ -282,7 +282,7 @@ DoublyRobustEst <- function(data) {
 
 #### highDim data
 
-```{r highDim data, echo=FALSE}
+```{r highDim data for pairing 12, echo=FALSE}
 DRE.high <- DoublyRobustEst(highDim_data)
 diff.high <- true_high_ATE-DRE.high[,1]
 
@@ -293,7 +293,7 @@ cat("ATE error for high dimensional data is:", diff.high, ".\n")
 
 #### lowDim data
 
-```{r lowDim data, echo=FALSE}
+```{r lowDim data for pairing 12, echo=FALSE}
 DRE.low <- DoublyRobustEst(lowDim_data)
 true.ATE.low <- 2.0901
 diff.low <- true_low_ATE-DRE.low[,1]
@@ -307,12 +307,12 @@ cat("ATE error for low dimensional data is:", diff.low, ".\n")
 
 ## Pairing 16
 >Algorithm: `Stratification`
-Distance Measure: `Propensity Score`
-Propensity Score Estimation: `Logistic Regression`
+>Distance Measure: `Propensity Score`
+>Propensity Score Estimation: `Logistic Regression`
 
 ### Introduction of the algorithm
 #### Use Logistic regression to get the propensity score
-```{r Propensity Score Estimation, echo=FALSE}
+```{r Propensity Score Estimation, echo=FALSE, warning=FALSE}
 # High dimension dataset
 ps_hd_est <- glm(A ~ . -Y,
                  family=binomial(), 
@@ -323,13 +323,13 @@ ps_hd_df <- data.frame(prop_score = predict(ps_hd_est, type = "response"),
                        Y = ps_hd_est$model$Y)
 ps_hd_df %>%
   group_by(treatment) %>% 
-  summarise(mean_prop_score=mean(prop_score))
+  summarise(mean_prop_score=mean(prop_score), .groups = "drop")
   
 labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
 ps_hd_df %>%
   mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
-  ggplot(aes(x = prop_score)) +
-  geom_histogram(color = "white") +
+  ggplot(aes(x = prop_score), binwidth = 30) +
+  geom_histogram(color = "white", bins=30) +
   facet_wrap(~treatment) +
   xlab("Probability of being exposed") +
   theme_bw()
@@ -344,27 +344,24 @@ ps_ld_df <- data.frame(prop_score = predict(ps_ld_est, type = "response"),
                        Y = ps_ld_est$model$Y)
 ps_ld_df %>%
   group_by(treatment) %>% 
-  summarise(mean_prop_score=mean(prop_score))
+  summarise(mean_prop_score=mean(prop_score), .groups = "drop")
   
 labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
 ps_ld_df %>%
   mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
   ggplot(aes(x = prop_score)) +
-  geom_histogram(color = "white") +
+  geom_histogram(color = "white", bins=30) +
   facet_wrap(~treatment) +
   xlab("Probability of being exposed") +
   theme_bw()
 ```
 
 #### Perform stratification and find difference of means and weights.
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 
 n_strat <- 7
-
 #High Dimensional Data
-
-
 hd_prep <- system.time({
   
   #Stratify the Data by Propensity score
@@ -381,30 +378,25 @@ hd_prep <- system.time({
     mutate(diff_mean = sum(mean_treat)) %>%
     filter(treatment == 0) %>%
     select(stratum, diff_mean);
-
   #Weights for each stratum
   diff_weight_hd <- strat_hd_df %>%
     group_by(stratum) %>%
     tally() %>%
     mutate(weight = n/nrow(strat_hd_df)) %>%
     left_join(diff_mean_hd, by = "stratum") %>%
-    select(weight, diff_mean)
+    select(weight, diff_mean);
+  
+  #Calculate the ATE
+  ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 })
-
-
-
-
-
+time_hd <-sum(hd_prep)
 #Low Dimensional Data
-
 ld_prep <- system.time({
   
   #Stratify the Data by Propensity score
   ld_strat_divider <- n_strat/nrow(ps_ld_df);
   strat_ld_df <- ps_ld_df %>% arrange(prop_score) %>%
     mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1);
-
-
   #Differences in means
   diff_mean_ld <- strat_ld_df %>%
     group_by(treatment, stratum) %>%
@@ -414,35 +406,30 @@ ld_prep <- system.time({
     mutate(diff_mean = sum(mean_treat)) %>%
     filter(treatment == 0) %>%
     select(stratum, diff_mean);
-
   #Weights for each stratum
   diff_weight_ld <- strat_ld_df %>%
     group_by(stratum) %>%
     tally() %>%
     mutate(weight = n/nrow(strat_ld_df)) %>%
     left_join(diff_mean_ld, by = "stratum") %>%
-    select(weight, diff_mean)
+    select(weight, diff_mean);
+  
+  #Calculate the ATE
+  ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
 }) 
-
-
+time_ld <- sum(ld_prep)
 ```
 
-#### Alternate Method that performs regression on each stratum by Y with A and Vs. 
-Then averages the coefficients for A in each stratum to get the ATE.
+#### Alternate Method that performs regression on each stratum by Y with A and Vs. Then averages the coefficients 
+### for A in each stratum to get the ATE
 
 ```{r, echo=FALSE}
-
-
 n_strat <- 7
-
 #High Dimensional Data
-
-
 hd_prep_alt <- system.time({
   hd_strat_divider <- n_strat/nrow(ps_hd_df);
   
   #Append propensity score to the initial dataset
-
   hd_pscore <- matrix(ps_hd_df$prop_score, ncol = 1);
   hd_df_pscore <- cbind(highDim_data, hd_pscore);
   
@@ -454,23 +441,19 @@ hd_prep_alt <- system.time({
     do(strat_reg = lm(Y ~ A + .-stratum, data = .)) %>%
     mutate(coefs = list(strat_reg[["coefficients"]])) %>%
     select(-strat_reg) %>%
-    summarize(ajz = coefs[["A"]], .groups = "drop")
-  
+    summarize(ajz = coefs[["A"]], .groups = "drop");
  
-  
-  
+  #Calculate the ATE
+  ATE_hd_alt <-  mean(strat_hd_reg$ajz)
   
 })
-
-
+time_hd_alt <- sum(hd_prep_alt)
 #Low Dimensional Data
-
 ld_prep_alt <- system.time({
   
   ld_strat_divider <- n_strat/nrow(ps_ld_df);
   
   #Append propensity score to the initial dataset
-
   ld_pscore <- matrix(ps_ld_df$prop_score, ncol = 1);
   ld_df_pscore <- cbind(lowDim_data, ld_pscore);
   
@@ -483,48 +466,37 @@ ld_prep_alt <- system.time({
     mutate(coefs = list(strat_reg[["coefficients"]])) %>%
     select(-strat_reg) %>%
     summarize(ajz = coefs[["A"]], .groups = "drop")
-  
-  mean(strat_ld_reg$ajz)
-  
+  #Calculate the ATE
+  ATE_ld_alt <-  mean(strat_ld_reg$ajz)
   
 }) 
-
-
+time_ld_alt <- sum(ld_prep_alt)
 ```
 
 
-### Calculates the ATE
-
-```{r, echo=FALSE}
-ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
-ATE_ld <- sum(diff_weight_ld$diff_mean * diff_weight_ld$weight)
-
-ATE_hd_alt <-  mean(strat_hd_reg$ajz)
-ATE_ld_alt <-  mean(strat_ld_reg$ajz)
-
-
-ATE_hd_alt2 <- sum(reg_est_result_hd$estimate)/n_strat
-ATE_ld_alt2 <- sum(reg_est_result_ld$estimate)/n_strat
-
-```
-
+### Calculates the ATE and process time
 #### High Dim data
-```{r}
+```{r highDim for pairing 12, echo=FALSE}
 cat("ATE for stratification is:", ATE_hd, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
+cat("Processing time for stratification is" , time_hd, "seconds.\n")
 cat("ATE error for stratification is:", true_high_ATE-ATE_hd, ".\n")
 cat("\nATE for stratification alternative is:", ATE_hd_alt, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
+cat("Processing time for stratification is" , time_hd_alt, "seconds.\n")
 cat("ATE error for stratification alternative is:", true_high_ATE-ATE_hd_alt, ".\n")
 ```
 
 #### Low Dim data
-```{r}
+```{r lowDim for pairing 12, echo=FALSE}
 cat("ATE for stratification is:", ATE_ld, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
+cat("Processing time for stratification is" , time_ld, "seconds.\n")
 cat("ATE error for stratification is:", true_low_ATE-ATE_ld, ".\n")
 cat("\nATE for stratification alternative is:", ATE_ld_alt, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
+cat("Processing time for stratification is" , time_ld_alt, "seconds.\n")
 cat("ATE error for stratification alternative is:", true_low_ATE-ATE_ld_alt, ".\n")
+```
+
+## Summary
+```{r summary, echo=FALSE}
+
 ```
 
