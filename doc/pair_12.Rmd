@@ -39,12 +39,14 @@ DoublyRobustEst <- function(data) {
   X = data %>% select(-Y, -A)
   n <- dim(data)[1]
   
+  start_time1 <- Sys.time()
   #get propensity scores by using logistic regression
   logit_model <- glm(A ~., data=data[,-1], family="binomial")
   propensity <- predict(logit_model, X, type="response")
   data$ps <- propensity
+  end_time1 <- Sys.time()
   
-  start_time <- Sys.time()
+  start_time2 <- Sys.time()
   #split treatment and control group, and do regression for each group
   control <- data[data$A == 0, -2]
   treatment <- data[data$A == 1, -2]
@@ -59,10 +61,12 @@ DoublyRobustEst <- function(data) {
   ATE <- sum((data$A*data$Y-(data$A-data$ps)*data$m1)/data$ps)/n - 
          sum(((1-data$A)*data$Y+(data$A-data$ps)*data$m0)/(1-data$ps))/n
   
-  end_time <- Sys.time()
-  time <- end_time - start_time
+  end_time2 <- Sys.time()
   
-  df <- data.frame(cbind(ATE,time))
+  time1 <- end_time1 - start_time1
+  time2 <- end_time2 - start_time2
+  
+  df <- data.frame(cbind(ATE, time1, time2))
   
   return(df)
 }
@@ -78,7 +82,8 @@ diff.low <- true.ATE.low-DRE.low[,1]
 
 cat("ATE using Doubly Robust Estimation for lowDim data = ", DRE.low[,1], "\n")
 cat("The difference between the calculated ATE and the true ATE = ", diff.low, "\n")
-cat("Time for getting the propensity score and the ATE = ", DRE.low[,2], "s \n")
+cat("Processing time for calculating the propensity score is" ,DRE.low[,2], "seconds.\n")
+cat("Processing time for the algorithm for low dimensional data is" ,DRE.low[,3], "seconds.\n")
 ```
 
 
@@ -91,7 +96,8 @@ diff.high <- true.ATE.high-DRE.high[,1]
 
 cat("ATE using Doubly Robust Estimation for highDim data = ", DRE.high[,1], "\n")
 cat("The difference between the calculated ATE and the true ATE = ", diff.high, "\n")
-cat("Time for getting the propensity score and the ATE = ", DRE.high[,2], "s \n")
+cat("Processing time for calculating the propensity score is" ,DRE.high[,2], "seconds.\n")
+cat("Processing time for the algorithm for high dimensional data is" ,DRE.high[,3], "seconds.\n")
 ``` 
 
 
