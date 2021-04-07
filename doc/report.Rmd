@@ -188,8 +188,19 @@ Linear Propensity Score didn't perform as well for high dimension as low dimensi
 
 ### optimal full matching
 ```{r ATE(average treatment effect), running time of pairing 5, echo=FALSE}
-pair5fhigh = Propensity.Score.ate(highDim_data, methods="full", link="linear.logit")
-pair5flow = Propensity.Score.ate(lowDim_data, methods="full", link="linear.logit")
+linear.Propensity.Score.ate <- function(data){
+  start_time <- Sys.time()
+  match_full<-matchit(A ~ .-Y,data=data,method="full",distance="glm",link = "linear.logit", estimand = "ATE")
+  data.fullMatching <- match.data(match_full)
+  x = data.fullMatching %>% group_by(subclass,A) %>% summarise(mean_y = mean(Y), .groups = 'drop')
+  group_ate = x %>% group_by(subclass) %>% summarise(treat_eff = mean_y[A == 1] - mean_y[A == 0], .groups = 'drop')
+  group_n = data.fullMatching %>% group_by(subclass) %>% count()
+  ate = sum(group_ate$treat_eff*group_n$n/nrow(data))
+  end_time <- Sys.time()
+  return(list(ATE=ate,running_time = end_time - start_time))
+}
+pair5fhigh = linear.Propensity.Score.ate(highDim_data)
+pair5flow = linear.Propensity.Score.ate(lowDim_data)
 ```
 
 #### High Dim for pairing 5
