@@ -652,5 +652,17 @@ The table shows the ATEs, ATE errors, and times for all of our algorithms for bo
 
 ![](../figs/summary.png)
 
-Based on our calculation on ATE and processing time for the five algorithms that we implemented, we conclude that stratification works best on low dimension dataset and the stratification with alternative method is the most efficient on high dimension dataset.
+Based on our calculation on ATE and processing time for the five algorithms that we implemented, we conclude that doubly robust estimation works best on low dimension dataset and the stratification with alternative method is the most efficient on high dimension dataset.
+
+
+## Sources
+
+Chan, David, Rong Ge, Ori Gershony, Tim Hesterberg, and Diane Lambert. 2010. “Evaluating Online Ad Campaigns in a Pipeline: Causal Models at Scale.” In Proceedings of the 16th Acm Sigkdd International Conference on Knowledge Discovery and Data Mining, 7–16.
+
+Lunceford, Jared K, and Marie Davidian. 2004. “Stratification and Weighting via the Propensity Score in Estimation of Causal Treatment Effects a Comparative Study.” Statistics in Medicine 23 (19): 2937–60.
+
+P. Rosenbaum and D. B. Rubin. Reducing bias in observational studies using subclassification on the propensity score. Journal of the American Statistical Association, 79:516–524, 1984.
+
+Stuart, Elizabeth A. 2010. “Matching Methods for Causal Inference: A Review and a Look Forward.” Statistical Science: A Review Journal of the Institute of Mathematical Statistics 25 (1): 1.
+
 
