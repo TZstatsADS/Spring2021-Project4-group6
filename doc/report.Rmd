@@ -492,67 +492,6 @@ ld_prep_alt <- system.time({
 
 ```
 
-#### Second Alternative method that performs regression on each stratum by Y and A
-
-```{r, echo=FALSE}
-
-
-n_strat <- 7
-
-#High Dimensional Data
-
-
-hd_prep_alt2 <- system.time({
-  
-  #Stratify the Data by Propensity score
-  hd_strat_divider <- n_strat/nrow(ps_hd_df);
-  strat_hd_df_alt2 <- ps_hd_df %>% arrange(prop_score) %>%
-    mutate(stratum =  as.integer((1:n() -.5)*hd_strat_divider ) + 1);
-  
-  #Perform Regression on each Stratum
-  reg_stratum_hd <- strat_hd_df_alt2 %>%
-    group_by(stratum) %>%
-    do(tidy(lm(Y ~ treatment, .)));
-  
-  #Will end up with a matrix of regression terms alternating with (Intercept) and Y.
-  #Since we are subtracting the point on the regression where Y(our x term) is 0 from where Y is 1,
-  #We are doing this type of equation:      Result = (Intercept + (1* Y)) - (Intecept) = Y
-  #Thus, we only need the estimate for the Y's
-  
-  reg_est_result_hd <- reg_stratum_hd %>%
-    filter(term == "treatment") %>%
-    select(stratum, estimate)
-})
-
-
-#Low Dimensional Data
-
-ld_prep_alt2 <- system.time({
-  
-  #Stratify the Data by Propensity score
-  ld_strat_divider <- n_strat/nrow(ps_ld_df);
-  strat_ld_df_alt2 <- ps_ld_df %>% arrange(prop_score) %>%
-    mutate(stratum =  as.integer((1:n() -.5)*ld_strat_divider ) + 1);
-
-
-  #Perform Regression on each Stratum
-  reg_stratum_ld <- strat_ld_df_alt2 %>%
-    group_by(stratum) %>%
-    do(tidy(lm(Y ~ treatment, .)));
-  
-  #Will end up with a matrix of regression terms alternating with (Intercept) and Y.
-  #Since we are subtracting the point on the regression where Y(our x term) is 0 from where Y is 1,
-  #We are doing this type of equation:      Result = (Intercept + (1* Y)) - (Intecept) = Y
-  #Thus, we only need the estimate for the Y's
-  
-  reg_est_result_ld <- reg_stratum_ld %>%
-    filter(term == "treatment") %>%
-    select(stratum, estimate)
-}) 
-
-
-```
-
 
 ### Calculates the ATE
 
@@ -577,9 +516,6 @@ cat("ATE error for stratification is:", true_high_ATE-ATE_hd, ".\n")
 cat("\nATE for stratification alternative is:", ATE_hd_alt, ".\n")
 #cat("Processing time for stratification is" , ?? , "seconds.\n")
 cat("ATE error for stratification alternative is:", true_high_ATE-ATE_hd_alt, ".\n")
-cat("\nATE for stratification alternative 2 is:", ATE_hd_alt2, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
-cat("ATE error for stratification alternative 2 is:", true_high_ATE-ATE_hd_alt2, ".\n")
 ```
 
 #### Low Dim data
@@ -590,8 +526,5 @@ cat("ATE error for stratification is:", true_low_ATE-ATE_ld, ".\n")
 cat("\nATE for stratification alternative is:", ATE_ld_alt, ".\n")
 #cat("Processing time for stratification is" , ?? , "seconds.\n")
 cat("ATE error for stratification alternative is:", true_low_ATE-ATE_ld_alt, ".\n")
-cat("\nATE for stratification alternative 2 is:", ATE_ld_alt2, ".\n")
-#cat("Processing time for stratification is" , ?? , "seconds.\n")
-cat("ATE error for stratification alternative 2 is:", true_low_ATE-ATE_ld_alt2, ".\n")
 ```
 
