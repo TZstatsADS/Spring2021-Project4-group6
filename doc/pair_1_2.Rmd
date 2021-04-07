@@ -95,7 +95,7 @@ ps_ld_df %>%
 # Propensity Score Estimation: NA
 # Matching performed on low dimension dataset
 covs = colnames(lowDim_data)[-2:-1]
-system.time({
+pair1_lowdim_time = system.time({
   if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
     print('There are null values in the dataset')
     break
@@ -138,7 +138,7 @@ coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
 # Algorithm: Propensity Matching
 # Distance Measure: Propensity Score
 # Propensity Score Estimation: Logistic Regression
-system.time({
+pair2_lowdim_time = system.time({
   if (length(na.omit(lowDim_data)) != length(lowDim_data)) {
     print('There are null values in the dataset')
     break
@@ -180,7 +180,7 @@ pair2_lowdim_ATE = mpair2_fit$coefficients['A']
 # Propensity Score Estimation: NA
 # Matching performed on low dimension dataset
 covs = colnames(highDim_data)[-2:-1]
-system.time({
+pair1_highdim_time = system.time({
   if (length(na.omit(highDim_data)) != length(highDim_data)) {
     print('There are null values in the dataset')
     break
@@ -222,7 +222,7 @@ coeftest(mpair1_fit, vcov. = vcovCL, cluster = ~subclass)
 # Algorithm: Propensity Matching
 # Distance Measure: Propensity Score
 # Propensity Score Estimation: Logistic Regression
-system.time({
+pair2_highdim_time = system.time({
   if (length(na.omit(highDim_data)) != length(highDim_data)) {
     print('There are null values in the dataset')
     break
