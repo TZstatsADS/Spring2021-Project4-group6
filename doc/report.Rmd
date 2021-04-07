@@ -200,7 +200,7 @@ cat("ATE error for high dimensional data is:", true_high_ATE-pair5fhigh$ATE, ".\
 ```
 
 #### Low Dim data
-```{r highDim data, echo=FALSE}
+```{r lowDim data, echo=FALSE}
 cat("ATE for low dimensional data is:", pair5flow$ATE, ".\n")
 cat("Processing time for low dimensional data is" ,pair5flow$running_time, "seconds.\n")
 cat("ATE error for low dimensional data is:", true_low_ATE-pair5flow$ATE, ".\n")
