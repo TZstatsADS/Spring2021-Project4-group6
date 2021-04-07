@@ -107,6 +107,9 @@ pair1_lowdim_time = system.time({
                       estimand = "ATE")
   }  
 })
+
+pair1_ld_time <- pair1_lowdim_time[1] + pair1_lowdim_time[2]
+
 ```
 From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
 "Although matching on the propensity score is often effective at eliminating differences between the treatment groups to achieve covariate balance, its performance in this regard must be assessed. If covariates remain imbalanced after matching, the matching is considered unsuccessful, and a different matching specification should be tried. MatchIt offers a few tools for the assessment of covariate balance after matching. These include graphical and statistical methods. More detail on the interpretation of the included plots and statistics can be found in vignette("assessing-balance").
@@ -151,6 +154,8 @@ pair2_lowdim_time = system.time({
                       estimand = "ATE")
   }  
 })
+
+pair2_ld_time <- pair2_lowdim_time[1] + pair2_lowdim_time[2]
 ```
 ```{r Assessing Quality of Pairing 2 Matches Low Dim, echo=FALSE}
 pair_2
@@ -192,6 +197,8 @@ pair1_highdim_time = system.time({
                       estimand = "ATE")
   }  
 })
+
+pair1_hd_time <- pair1_highdim_time[1] + pair1_highdim_time[2]
 ```
 From https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html#matching ...
 "Although matching on the propensity score is often effective at eliminating differences between the treatment groups to achieve covariate balance, its performance in this regard must be assessed. If covariates remain imbalanced after matching, the matching is considered unsuccessful, and a different matching specification should be tried. MatchIt offers a few tools for the assessment of covariate balance after matching. These include graphical and statistical methods. More detail on the interpretation of the included plots and statistics can be found in vignette("assessing-balance").
@@ -235,6 +242,7 @@ pair2_highdim_time = system.time({
                       estimand = "ATE")
   }  
 })
+pair2_hd_time <- pair2_highdim_time[1] + pair2_highdim_time[2]
 ```
 ```{r Assessing Quality of Pairing 2 Matches High Dim, echo=FALSE}
 pair_2
