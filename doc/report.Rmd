@@ -193,14 +193,14 @@ pair5flow = Propensity.Score.ate(lowDim_data, methods="full", link="linear.logit
 ```
 
 #### High Dim for pairing 5
-```{r highDim data for pairing 5, echo=FALSE}
+```{r highDim data for pairing 5 full matching, echo=FALSE}
 cat("ATE for high dimensional data is:", pair5fhigh$ATE, ".\n")
 cat("Processing time for high dimensional data is" ,pair5fhigh$running_time, "seconds.\n")
 cat("ATE error for high dimensional data is:", true_high_ATE-pair5fhigh$ATE, ".\n")
 ```
 
 #### Low Dim data for pairing 5
-```{r lowDim datafor pairing 5, echo=FALSE}
+```{r lowDim data for pairing 5 full matching, echo=FALSE}
 cat("ATE for low dimensional data is:", pair5flow$ATE, ".\n")
 cat("Processing time for low dimensional data is" ,pair5flow$running_time, "seconds.\n")
 cat("ATE error for low dimensional data is:", true_low_ATE-pair5flow$ATE, ".\n")
@@ -213,14 +213,14 @@ pair5slow = Propensity.Score.ate(lowDim_data, methods="subclass", link="linear.l
 ```
 
 #### High Dim for pairing 5
-```{r highDim data for pairing 5, echo=FALSE}
+```{r highDim data for pairing 5 subclassification, echo=FALSE}
 cat("ATE for high dimensional data is:", pair5shigh$ATE, ".\n")
 cat("Processing time for high dimensional data is" ,pair5shigh$running_time, "seconds.\n")
 cat("ATE error for high dimensional data is:", true_high_ATE-pair5shigh$ATE, ".\n")
 ```
 
 #### Low Dim for pairing 5
-```{r lowDim data for pairing 5, echo=FALSE}
+```{r lowDim data for pairing 5 subclassification, echo=FALSE}
 cat("ATE for low dimensional data is:", pair5slow$ATE, ".\n")
 cat("Processing time for low dimensional data is" ,pair5slow$running_time, "seconds.\n")
 cat("ATE error for low dimensional data is:", true_low_ATE-pair5slow$ATE, ".\n")
