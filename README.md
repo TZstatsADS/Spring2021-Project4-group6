@@ -12,7 +12,7 @@ Term: Spring 2021
 	+ Yushi Pan
 	+ Yuqi Xing
 	+ Renyin Zhang
-+ Project summary: In this project, our group was assigned to implement 3 different algorithms (Propensity Matching, Doubly Robust Estimation, and Stratification) to calculate the average effect of the treatment (ATE) for two datasets: high dimensional data and low dimensional data. For Propensity Matching algorithm, we had 3 different distance measures: Mahalanobis, propensity score, and linear propensity score. Except for the Mahalanobis method, we used logistic regression to estimate the propensity score. At the end we compared the performance (ATE error & running time) of each algorithm.
++ Project summary: In this project, our group was assigned to implement 3 different algorithms (Propensity Matching, Doubly Robust Estimation, and Stratification) to calculate the average effect of the treatment (ATE) for two datasets: high dimensional data and low dimensional data. For Propensity Matching algorithm, we had 3 different distance measures: Mahalanobis, propensity score, and linear propensity score. Except for the Mahalanobis method which does not require the calculation of propensity score, we used logistic regression to estimate the propensity score. At the end we compared the performance (ATE error & running time) of each algorithm.
 	
 **Contribution statement**: 
 + Daryl: Implemented pairing 1 and 2 for the low dimensional data and tuned the respective algorithms for the best matching method (based on ATE). Contributed to slides on pairing 1 and 2, as well as the motivations for propensity matching.
