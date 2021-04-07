@@ -51,43 +51,47 @@ with(lowDim_data, t.test(Y ~ A))
 ### Use Logistic regression to get the propensity score
 ```{r Propensity Score Estimation, echo=FALSE}
 # High dimension dataset
-ps_hd_est <- glm(A ~ . -Y,
+ps_hd_strat <- system.time(ps_hd_est <- glm(A ~ . -Y,
                  family=binomial(), 
-                 data=highDim_data)
+                 data=highDim_data))
+
+ps_hd_strat_time <- ps_hd_strat[1] + ps_hd_strat[2]
 
 ps_hd_df <- data.frame(prop_score = predict(ps_hd_est, type = "response"),
                        treatment = ps_hd_est$model$A,
                        Y = ps_hd_est$model$Y)
 ps_hd_df %>%
   group_by(treatment) %>% 
-  summarise(mean_prop_score=mean(prop_score))
+  summarise(mean_prop_score=mean(prop_score), .groups = "drop"  )
   
 labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
 ps_hd_df %>%
   mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
   ggplot(aes(x = prop_score)) +
-  geom_histogram(color = "white") +
+  geom_histogram(color = "white", binwidth = 0.05) +
   facet_wrap(~treatment) +
   xlab("Probability of being exposed") +
   theme_bw()
 
 # Low dimension dataset
-ps_ld_est <- glm(A ~ . -Y,
+ps_ld_strat <- system.time(ps_ld_est <- glm(A ~ . -Y,
                  family=binomial(), 
-                 data=lowDim_data)
+                 data=lowDim_data))
+
+ps_ld_strat_time <- ps_ld_strat[1] + ps_ld_strat[2]
 
 ps_ld_df <- data.frame(prop_score = predict(ps_ld_est, type = "response"),
                        treatment = ps_ld_est$model$A,
                        Y = ps_ld_est$model$Y)
 ps_ld_df %>%
   group_by(treatment) %>% 
-  summarise(mean_prop_score=mean(prop_score))
+  summarise(mean_prop_score=mean(prop_score), .groups = "drop" )
   
 labs <- paste("Actual treatment indicator:", c("Treated", "Control"))
 ps_ld_df %>%
   mutate(treatment = ifelse(treatment == 1, labs[1], labs[2])) %>%
   ggplot(aes(x = prop_score)) +
-  geom_histogram(color = "white") +
+  geom_histogram(color = "white", binwidth = 0.05) +
   facet_wrap(~treatment) +
   xlab("Probability of being exposed") +
   theme_bw()
@@ -131,7 +135,7 @@ hd_prep <- system.time({
   ATE_hd <- sum(diff_weight_hd$diff_mean * diff_weight_hd$weight)
 })
 
-time_hd <-sum(hd_prep)
+time_hd <-hd_prep[1] + hd_prep[2]
 
 
 #Low Dimensional Data
@@ -167,7 +171,7 @@ ld_prep <- system.time({
 
 }) 
 
-time_ld <- sum(ld_prep)
+time_ld <- ld_prep[1] + ld_prep[2]
 
 ```
 
@@ -205,7 +209,7 @@ hd_prep_alt <- system.time({
   
 })
 
-time_hd_alt <- sum(hd_prep_alt)
+time_hd_alt <- hd_prep_alt[1] + hd_prep_alt[2]
 
 #Low Dimensional Data
 
@@ -233,7 +237,7 @@ ld_prep_alt <- system.time({
   
 }) 
 
-time_ld_alt <- sum(ld_prep_alt)
+time_ld_alt <- ld_prep_alt[1] + ld_prep_alt[2]
 ```
 
 ### Second Alternative method that performs regression on each stratum by Y and A
@@ -271,7 +275,7 @@ hd_prep_alt2 <- system.time({
   ATE_hd_alt2 <- sum(reg_est_result_hd$estimate)/n_strat
 })
 
-time_hd_alt2 <- sum(hd_prep_alt2)
+time_hd_alt2 <- hd_prep_alt2[1] + hd_prep_alt2[2]
 
 
 #Low Dimensional Data
@@ -303,7 +307,7 @@ ld_prep_alt2 <- system.time({
   ATE_ld_alt2 <- sum(reg_est_result_ld$estimate)/n_strat
 }) 
 
-time_ld_alt2 <- sum(ld_prep_alt2)
+time_ld_alt2 <- ld_prep_alt2[1] + ld_prep_alt2[2]
 
 ```
 
